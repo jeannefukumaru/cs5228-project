@@ -10,7 +10,7 @@ from snorkel.labeling import filter_unlabeled_dataframe
 from snorkel.utils import probs_to_preds
 import numpy as np
 import matplotlib.pyplot as plt 
-from labeling_funcs import * 
+from labeling_funcs.bbc_lfs import *
 from distilbert_utils import *
 from plotting_funcs import plot_label_frequency, plot_probabilities_histogram
 from mlflow import log_metric, log_param, log_artifacts
@@ -20,19 +20,14 @@ import os
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForSequenceClassification, Trainer, TrainingArguments
+from distilbert_config import tweets_config as config 
 
-mlflow.set_experiment('bert_sentiment_and_matchers_with_augmentation')
+mlflow.set_experiment(config['experiment_name'])
 
-lfs = [opinion_lexicon_neg, opinion_lexicon_pos, opinion_lexicon_neu, textblob_pos, textblob_neg, 
-        textblob_neu, vader_lexicon, lf_contains_delayed,
-        lf_contains_thank_you, lf_contains_awesome]
+lfs = config['lfs']
 
 print('reading in data...')
-X_train = pd.read_csv('data/processed/X_train.csv')
-y_train = pd.read_csv('data/processed/y_train.csv')
-
-X_dev = pd.read_csv('data/processed/X_dev.csv')
-y_dev = pd.read_csv('data/processed/y_dev.csv')
+X_train, y_train, X_dev, y_dev = read_data_from_config(config)
 
 print('applying labelling functions to data...')
 applier = PandasLFApplier(lfs=lfs)
@@ -40,13 +35,13 @@ L_train = applier.apply(df=X_train)
 L_dev = applier.apply(df=X_dev)
 
 print('fitting Label Model')
-label_model = LabelModel(cardinality=3, verbose=True)
+label_model = LabelModel(cardinality=config['cardinality'], verbose=True)
 label_model.fit(L_train=L_train, n_epochs=500, log_freq=100, seed=123)
 label_model_acc = label_model.score(L=L_dev, Y=y_dev, tie_break_policy="random")["accuracy"]
 print(f'label model acc: {label_model_acc}')
 
 print('fitting Majority Label Voter model')
-majority_model = MajorityLabelVoter(cardinality=3)
+majority_model = MajorityLabelVoter(cardinality=5)
 # preds_train = majority_model.predict(L=L_train)
 majority_acc = majority_model.score(L=L_dev, Y=np.array(y_dev).reshape(-1,1), tie_break_policy="random")["accuracy"]
 print(f'majority_label_acc: {majority_acc}')
@@ -61,10 +56,11 @@ df_train_filtered, probs_train_filtered = filter_unlabeled_dataframe(
 )
 preds_train_filtered = probs_to_preds(probs=probs_train_filtered)
 
-print('setting up discriminative model that will take in noise-aware labels from Label Model')
+print('setting up model that will take in noise-aware labels from Label Model')
 print('tokenizing and encoding texts')
 tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
 train_encodings = tokenizer(X_train['text'].values.tolist(), truncation=True, padding=True)
+train_encodings = tokenizer(df_train_filtered['text'].values.tolist(), truncation=True, padding=True)
 dev_encodings = tokenizer(X_dev['text'].values.tolist(), truncation=True, padding=True)
 
 train_weak_sup_dataset = TweetsDataset(train_encodings, preds_train_filtered)
@@ -81,7 +77,7 @@ training_args = TrainingArguments(
     logging_steps=10,
 )
 
-model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=3)
+model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=config['num_labels'])
 print('start training!')
 trainer = Trainer(
     model=model,                         # the instantiated 🤗 Transformers model to be trained
@@ -93,7 +89,7 @@ trainer = Trainer(
 
 trainer.train()
 
-save_model_folder = "results/datetime.now().strftime('%Y%m%d%M')/"
+save_model_folder = "results/" + datetime.now().strftime('%Y%m%d%M') + "/"
 os.makedirs(save_model_folder)
 trainer.save_model(save_model_folder)
 
@@ -101,20 +97,8 @@ results_dict = trainer.evaluate()
 log_and_print_metrics(results_dict)
 
 
-metrics = pd.DataFrame({'precision':results_dict['precision'], 'recall':results_dict['recall'], 'fscore':results_dict['fscore'], 'support': results_dict['support']})
+metrics = pd.DataFrame({'precision':results_dict['eval_precision'], 'recall':results_dict['eval_recall'], 'fscore':results_dict['eval_f1']}, index=[0])
 metrics_csv_name = datetime.now().strftime('%Y%m%d%M') + 'metrics.csv'
 metrics.to_csv('outputs/' + metrics_csv_name)
-print('overall metrics saved to outputs/csv_name')
+print(f'overall metrics saved to outputs/{metrics_csv_name}')
 
-print('plotting summary graphs of labeling functions')
-plot_probabilities_histogram(probs_train[:, POS])
-plot_label_frequency(L_train)
-
-lf_summary = LFAnalysis(L=L_train, lfs=lfs).lf_summary()
-csv_name = datetime.now().strftime('%Y%m%d%M') + 'lf_summary.csv'
-lf_summary.to_csv('outputs/' + csv_name)
-print('labelling functions summary csv saved to outputs/{csv_name}')
-print(lf_summary)
-
-print(lf_summary)
-log_artifacts("outputs")

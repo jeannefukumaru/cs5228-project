@@ -14,6 +14,9 @@ BUSINESS = 1
 TECH = 0
 ABSTAIN = -1
 
+kmeans = joblib.load('bbc_kmeans.joblib')
+vectorizer = joblib.load('tfidf.joblib')
+
 bbc_stop_words = ['said', 'people', 'new', 'mr']
 custom_stop_words = text.ENGLISH_STOP_WORDS.union(bbc_stop_words)
 
@@ -25,7 +28,7 @@ def lf_contains_tech_terms(x):
              'half life', 'legal action', 'digital cameras', 'vice president', 'mail messages', 'net users', 'desktop search',
              'security firm','chief executive', 'hi tech', 'video games', 'search engines', 'video games', 'internet explorer',
              'hip hop', 'anti spyware', 'san andreas', 'windows xp', 'pc pro', 'european parliment', 'anti spam', 'sony psp',
-             'media player', 'junk mail', 'battery life', 'computer users', 'jupiter research']
+             'media player', 'junk mail', 'battery life', 'computer users', 'jupiter research', 'internet access', 'mobile tv']
     return TECH if any(t in x.text.lower() for t in words) else ABSTAIN
 
 @labeling_function()
@@ -66,7 +69,8 @@ def lf_contains_politics_terms(x):
             'foreign secretary', 'liberal democrat', 'leader michael', 'bbc news', 'public services', 'house lords', 'downing street', 'home office', 
             'charles kennedy', 'today programme', 'radio today', 'lord chancellor', 'local government', 'lord goldsmith', 'iraq war', 'political parties',
             'house arrest', 'law lords', 'income tax', 'david blunkett', 'tax cuts', 'jack straw', 'public sector', 'leader charles', 'lord falconer',
-            'conservative party', 'alan milburn', 'england wales', 'pre election', 'blair told', 'labour election', 'terror suspects']
+            'conservative party', 'alan milburn', 'england wales', 'pre election', 'blair told', 'labour election', 'terror suspects', 'oliver letwin',
+            'attorney general', 'chancellor gordon']
     return POLITICS if any(t in x.text.lower() for t in words) else ABSTAIN
 
 # labeling functions for topic modelling results 
@@ -74,8 +78,36 @@ def lf_contains_politics_terms(x):
 # not to mention concordance or other sentence structures 
 
 # and other clustering options 
-# kmeans model option
+
+@labeling_function()
+def lf_kmeans_label_0(x):
+    vecs = vectorizer.transform(x)
+    predicted_cluster = kmeans.predict(vecs)
+    return SPORT if predicted_cluster == 0 else ABSTAIN
+
+@labeling_function()
+def lf_kmeans_label_1(x):
+    vecs = vectorizer.transform(x)
+    predicted_cluster = kmeans.predict(vecs)
+    return TECH if predicted_cluster == 1 else ABSTAIN
+
+@labeling_function()
+def lf_kmeans_label_2(x):
+    vecs = vectorizer.transform(x)
+    predicted_cluster = kmeans.predict(vecs)
+    return ENTERTAINMENT if predicted_cluster == 2 else ABSTAIN
+
+@labeling_function()
+def lf_kmeans_label_3(x):
+    vecs = vectorizer.transform(x)
+    predicted_cluster = kmeans.predict(vecs)
+    return BUSINESS if predicted_cluster == 3 else ABSTAIN
 
 
+@labeling_function()
+def lf_kmeans_label_4(x):
+    vecs = vectorizer.transform(x)
+    predicted_cluster = kmeans.predict(vecs)
+    return POLITICS if predicted_cluster == 4 else ABSTAIN
 
     

@@ -3,25 +3,17 @@ import pandas as pd
 import numpy as np 
 from collections import OrderedDict
 
+#synonym and adjective swappers adapted from the snorkel official tutorials 
+#https://github.com/snorkel-team/snorkel-tutorials/blob/master/spam/02_spam_data_augmentation_tutorial.ipynb
+
+# random insertion, random swap and random deletion adapted from the paper 
+# EDA: Easy Data Augmentation Techniques for Boosting Performance on Text Classification Tasks 
+# https://github.com/jasonwei20/eda_nlp
+
+
 spacy = SpacyPreprocessor(text_field="text", doc_field="doc", memoize=True)
 # import names
 from snorkel.augmentation import transformation_function
-
-# Pregenerate some random person names to replace existing ones with
-# for the transformation strategies below
-# replacement_names = [names.get_full_name() for _ in range(50)]
-
-# Replace a random named entity with a different entity of the same type.
-# @transformation_function(pre=[spacy])
-# def change_person(x):
-#     person_names = [ent.text for ent in x.doc.ents if ent.label_ == "PERSON"]
-#     # If there is at least one person name, replace a random one. Else return None.
-#     if person_names:
-#         name_to_replace = np.random.choice(person_names)
-#         replacement_name = np.random.choice(replacement_names)
-#         x.text = x.text.replace(name_to_replace, replacement_name)
-#         return x
-
 
 # Swap two adjectives at random.
 @transformation_function(pre=[spacy])
@@ -46,7 +38,6 @@ import nltk
 from nltk.corpus import wordnet as wn
 
 nltk.download("wordnet")
-
 
 def get_synonym(word, pos=None):
     """Get synonym for word given its part-of-speech (pos)."""

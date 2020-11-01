@@ -4,6 +4,8 @@ from nltk.sentiment.vader import SentimentIntensityAnalyzer  # supposedly traine
 from snorkel.labeling import labeling_function
 from snorkel.preprocess import preprocessor
 from textblob import TextBlob
+import joblib
+from sentence_transformers import SentenceTransformer
 
 NEU = 2
 POS = 1
@@ -14,6 +16,27 @@ pos_list = set(opinion_lexicon.positive())
 neg_list = set(opinion_lexicon.negative())
 
 vader = SentimentIntensityAnalyzer()
+
+kmeans = joblib.load('tweets_kmeans.joblib')
+model = SentenceTransformer('distilbert-base-nli-mean-tokens')
+
+@labeling_function()
+def kmeans_neu(x):
+    sentence = model.encode(str(x))
+    label = kmeans.predict(sentence)
+    return NEU if label == 0 else ABSTAIN
+
+@labeling_function()
+def kmeans_pos(x):
+    sentence = model.encode(str(x))
+    label = kmeans.predict(sentence)
+    return POS if label == 1 else ABSTAIN
+
+@labeling_function()
+def kmeans_neg(x):
+    sentence = model.encode(str(x))
+    label = kmeans.predict(sentence)
+    return NEG if label == 2 else ABSTAIN
 
 def opinion_lexicon_sentiment(sentence):
     senti = 0 
@@ -38,19 +61,28 @@ def opinion_lexicon_neg(x):
 @labeling_function()
 def opinion_lexicon_neu(x):
     senti = opinion_lexicon_sentiment(x)
-    return NEU if senti == 0 else ABSTAIN
+    return NEU if senti ==0 and senti <=1 else ABSTAIN
 
 @labeling_function()
-def vader_lexicon(x):
+def vader_lexicon_neg(x):
     polarity = vader.polarity_scores(str(x))
     if polarity['neg'] > polarity['pos']:
-        return NEG
-    elif polarity['pos'] > polarity['neg']:
-        return POS
-    elif polarity['neu'] > polarity['pos'] and polarity['neu'] > polarity['neg']:
+        return NEG 
+    else: return ABSTAIN
+
+@labeling_function()
+def vader_lexicon_pos(x):
+    polarity = vader.polarity_scores(str(x))
+    if polarity['pos'] > polarity['neg']:
+        return POS 
+    else: return ABSTAIN
+
+@labeling_function()
+def vader_lexicon_neu(x):
+    polarity = vader.polarity_scores(str(x))
+    if polarity['neu'] > polarity['pos'] and polarity['neu'] > polarity['neg']:
         return NEU
-    else: 
-        return ABSTAIN
+    else: return ABSTAIN
 
 # @preprocessor(memoize=True)
 # def textblob_sentiment(x):
