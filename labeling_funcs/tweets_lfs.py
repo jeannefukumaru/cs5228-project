@@ -66,21 +66,21 @@ def opinion_lexicon_neu(x):
 @labeling_function()
 def vader_lexicon_neg(x):
     polarity = vader.polarity_scores(str(x))
-    if polarity['neg'] > polarity['pos']:
+    if polarity['compound'] < 0:
         return NEG 
     else: return ABSTAIN
 
 @labeling_function()
 def vader_lexicon_pos(x):
     polarity = vader.polarity_scores(str(x))
-    if polarity['pos'] > polarity['neg']:
+    if polarity['compound'] > 0:
         return POS 
     else: return ABSTAIN
 
 @labeling_function()
 def vader_lexicon_neu(x):
     polarity = vader.polarity_scores(str(x))
-    if polarity['neu'] > polarity['pos'] and polarity['neu'] > polarity['neg']:
+    if polarity['compound'] == 0:
         return NEU
     else: return ABSTAIN
 

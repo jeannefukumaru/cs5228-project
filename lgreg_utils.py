@@ -12,18 +12,21 @@ def print_and_log_accuracies(dev_weak_sup_accuracy, dev_full_sup_accuracy):
     print(f"dev weak sup accuracy: {dev_weak_sup_accuracy}%")
     print(f"dev full sup accuracy: {dev_full_sup_accuracy}%")
 
-def get_and_log_precision_recall_f1(sklearn_model, X_dev, y_dev):
+def print_and_log_precision_recall_f1(sklearn_model, model_name, X_dev, y_dev):
     predictions = sklearn_model.predict(X_dev)
     precision, recall, fscore, support = precision_recall_fscore_support(y_dev, predictions, average='micro')
-    log_metric('precision', precision)
-    log_metric('recall',recall)
-    log_metric('fscore',fscore)
-    # log_metric('support',support)
+    precision_metric = f'{model_name}_precision'
+    recall_metric = f'{model_name}_recall'
+    fscore_metric = f'{model_name}_fscore'
+    print(precision_metric)
+    log_metric(precision_metric, precision)
+    log_metric(recall_metric,recall)
+    log_metric(fscore_metric,fscore)
     precision, recall, fscore, support = precision_recall_fscore_support(y_dev, predictions)
-    print(f'precision: {precision}')
-    print(f'recall: {recall}')
-    print(f'fscore: {fscore}')
-    print(f'support: {support}')
+    print(f'{model_name} precision: {precision}')
+    print(f'{model_name} recall: {recall}')
+    print(f'{model_name} fscore: {fscore}')
+    print(f'{model_name} support: {support}')
     return precision, recall, fscore, support
 
 def read_data_from_config(config):

@@ -12,7 +12,6 @@ import numpy as np
 import matplotlib.pyplot as plt 
 from labeling_funcs.bbc_lfs import * 
 from lgreg_utils import *
-from plotting_funcs import plot_label_frequency, plot_probabilities_histogram
 from mlflow import log_metric, log_param, log_artifacts
 import mlflow
 from datetime import datetime
@@ -22,9 +21,28 @@ from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 from sklearn.feature_extraction import text
 from sklearn.linear_model import LogisticRegressionCV
 from lgreg_utils import read_data_from_config
-from lgreg_config import tweets_config as config
+from lgreg_config import *
 
-mlflow.set_experiment(config['experiment_name'])
+import argparse
+import warnings 
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+parser = argparse.ArgumentParser()
+parser.add_argument(dest='experiment_name', type=str, help="mlflow experiment name")
+parser.add_argument(dest='config', type=str, help="'tweets_config' or 'bbc_config'")
+args = parser.parse_args()
+
+print(args)
+print('parsing arguments..')
+if args.config == 'tweets_config':
+  config = tweets_config
+elif args.config == 'bbc_config':
+  config = bbc_config
+
+print(f"setting up experiment: {args.experiment_name}")
+mlflow.set_experiment(args.experiment_name)
 
 lfs = config['lfs']
 
@@ -70,18 +88,11 @@ print('training Logistic Regression model...')
 log_param('model', 'log_reg_cv_10')
 sklearn_model_weak_sup = LogisticRegressionCV(max_iter=500, cv=10, random_state=0, solver='liblinear').fit(X_train_filtered_vectorized, preds_train_filtered)
 sklearn_model_full_sup = LogisticRegressionCV(max_iter=500, cv=10, random_state=0, solver='liblinear').fit(X_train_vectorized, y_train)
-# cv_weak = sklearn_model_weak_sup.score(X_train_filtered, y_train)
-# cv_sup = sklearn_model_full_sup.score(X_train, y_train)
 
 dev_weak_sup_accuracy = sklearn_model_weak_sup.score(X=X_dev, y=y_dev) * 100
 dev_full_sup_accuracy = sklearn_model_full_sup.score(X=X_dev, y=y_dev) * 100
 
-print_and_log_accuracies(dev_weak_sup_accuracy, dev_full_sup_accuracy)   # cv_weak, cv_sup, 
-precision, recall, fscore, support = get_and_log_precision_recall_f1(sklearn_model_weak_sup, X_dev, y_dev)
-
-
-metrics = pd.DataFrame({'precision':precision, 'recall':recall, 'fscore':fscore, 'support': support})
-metrics_csv_name = datetime.now().strftime('%Y%m%d%M') + 'metrics.csv'
-metrics.to_csv('outputs/' + metrics_csv_name)
-print('overall metrics saved to outputs/csv_name')
+print_and_log_accuracies(dev_weak_sup_accuracy, dev_full_sup_accuracy)  
+precision, recall, fscore, support = print_and_log_precision_recall_f1(sklearn_model_weak_sup, X_dev, y_dev)
+precision, recall, fscore, support = print_and_log_precision_recall_f1(sklearn_model_full_sup, X_dev, y_dev)
 

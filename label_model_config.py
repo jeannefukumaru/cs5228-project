@@ -3,14 +3,13 @@ from labeling_funcs.bbc_lfs import *
 
 # tutorial on constructing labeling functions from https://www.snorkel.org
 
-tweets_config = {'experiment_name': 'tweets_opinion_lexicon_label_model',
+tweets_config = {'experiment_name': 'tweets_vader_label_model',
           'x_train_filepath': 'data/processed/tweets_x_train.csv',
           'y_train_filepath': 'data/processed/tweets_y_train.csv',
           'x_dev_filepath' : 'data/processed/tweets_x_dev.csv',
           'y_dev_filepath' : 'data/processed/tweets_y_dev.csv',
           'cardinality' : 3,
-          'lfs' : [lf_contains_cancelled,
-                    lf_contains_delayed, lf_contains_complaint, lf_contains_thank_you, lf_contains_awesome,],
+          'lfs' : [vader_lexicon_pos, vader_lexicon_neg, vader_lexicon_neu],
           'num_labels' : 3}
 
 bbc_config = {'experiment_name': 'bbc_eda_augmentation',

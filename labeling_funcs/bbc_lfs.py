@@ -1,4 +1,3 @@
- # supposedly trained on social media data 
 from snorkel.labeling import labeling_function
 from snorkel.preprocess import preprocessor
 from textblob import TextBlob
@@ -28,7 +27,8 @@ def lf_contains_tech_terms(x):
              'half life', 'legal action', 'digital cameras', 'vice president', 'mail messages', 'net users', 'desktop search',
              'security firm','chief executive', 'hi tech', 'video games', 'search engines', 'video games', 'internet explorer',
              'hip hop', 'anti spyware', 'san andreas', 'windows xp', 'pc pro', 'european parliment', 'anti spam', 'sony psp',
-             'media player', 'junk mail', 'battery life', 'computer users', 'jupiter research', 'internet access', 'mobile tv']
+             'media player', 'junk mail', 'battery life', 'computer users', 'jupiter research', 'internet access', 'mobile tv',
+             'net cafes', 'digital divide', 'cash machines', 'commodore 64', 'messages sent', 'south korea']
     return TECH if any(t in x.text.lower() for t in words) else ABSTAIN
 
 @labeling_function()
@@ -39,7 +39,8 @@ def lf_contains_business_terms(x):
             'manchester united', 'retail sales', 'bankruptcy protection', 'state owned', 'chief economist', 'wal mart', 'federal reserve',
             'european union', 'wall street', 'president bush', 'previous year', 'russian government', 'united states', 'low cost', 'financial times',
             'south africa', 'fannie mae', 'domestic demand', 'news corp', 'securities exchange', 'exchange commission', 'foreign firms',
-            'job creation', 'london stock', 'budget deficit', 'car maker', 'saudi arabia', 'general motors', 'finance minister', 'pre tax']
+            'job creation', 'london stock', 'budget deficit', 'car maker', 'saudi arabia', 'general motors', 'finance minister', 'pre tax', 
+            'borussia dortmund', 'jet fuel', 'mikhail khodorkovsky', 'current account', 'hong kong', 'abn amro']
     return BUSINESS if any(t in x.text.lower() for t in words) else ABSTAIN
 
 @labeling_function()
@@ -49,7 +50,7 @@ def lf_contains_sport_terms(x):
             'fa cup', 'lewis francis', 'european indoor', 'andy robinson', 'second set', 'coach andy', 'olympic champion', 'world record', 'carling cup',
             'subs used', 'drugs test', 'little bit', 'international rugby', 'open champion', 'england coach', 'anti doping', 'uefa cup', 'andy roddick',
             'lleyton hewitt', 'scrum half', 'world indoor', 'indoor championships', 'alex ferguson', 'world cross', 'free kick', 'stade touloussain', 
-            'roger federer', 'jose mourinho', 'rbs nations', 'long term', 'grand prix', 'sir alex']
+            'roger federer', 'jose mourinho', 'rbs nations', 'long term', 'grand prix', 'sir alex', 'landsdowne road', 'heineken cup']
     return SPORT if any(t in x.text.lower() for t in words) else ABSTAIN
 
 @labeling_function()
@@ -58,8 +59,8 @@ def lf_contains_entertainment_terms(x):
             'best director', '50 cent', 'best actress', 'best supporting', 'best actor', 'big brother', 'band aid', 'ray charles', 'singles chart',
             'super bowl', 'hip hop', 'martin scorsese', 'meet fockers', 'academy awards', 'harry potter', 'franz ferdinand', 'jamie foxx', 'ticket sales',
             'nominated best', 'imelda staunton', 'golden globe', 'spider man', 'mike leigh', 'da vinci', 'win best', 'music industry', 'clint eastwood',
-            'award best', 'clive owen', 'rock band', 'berlin film', 'william hit', 'green day', 'alicia keys', 'west end', 'best british', 'second place',
-            'oscar winning', 'finding neverland', 'uk film', 'joss stone']
+            'award best', 'clive owen', 'rock band', 'berlin film', 'william hill', 'green day', 'alicia keys', 'west end', 'best british', 'second place',
+            'oscar winning', 'finding neverland', 'uk film', 'joss stone', 'jailhouse rock']
     return ENTERTAINMENT if any(t in x.text.lower() for t in words) else ABSTAIN
 
 @labeling_function()
@@ -70,7 +71,7 @@ def lf_contains_politics_terms(x):
             'charles kennedy', 'today programme', 'radio today', 'lord chancellor', 'local government', 'lord goldsmith', 'iraq war', 'political parties',
             'house arrest', 'law lords', 'income tax', 'david blunkett', 'tax cuts', 'jack straw', 'public sector', 'leader charles', 'lord falconer',
             'conservative party', 'alan milburn', 'england wales', 'pre election', 'blair told', 'labour election', 'terror suspects', 'oliver letwin',
-            'attorney general', 'chancellor gordon']
+            'attorney general', 'chancellor gordon', 'tories say', 'mock elections']
     return POLITICS if any(t in x.text.lower() for t in words) else ABSTAIN
 
 # labeling functions for topic modelling results 

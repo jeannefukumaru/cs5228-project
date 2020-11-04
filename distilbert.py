@@ -4,15 +4,14 @@
 
 import pandas as pd 
 import nltk
+from snorkel.utils import probs_to_preds
 from snorkel.labeling import PandasLFApplier, labeling_function, LFAnalysis
 from snorkel.labeling.model import MajorityLabelVoter, LabelModel
 from snorkel.labeling import filter_unlabeled_dataframe
 from snorkel.utils import probs_to_preds
 import numpy as np
 import matplotlib.pyplot as plt 
-from labeling_funcs.bbc_lfs import *
 from distilbert_utils import *
-from plotting_funcs import plot_label_frequency, plot_probabilities_histogram
 from mlflow import log_metric, log_param, log_artifacts
 import mlflow
 from datetime import datetime
@@ -20,9 +19,28 @@ import os
 from sklearn.metrics import precision_recall_fscore_support, accuracy_score
 from transformers import DistilBertTokenizerFast
 from transformers import DistilBertForSequenceClassification, Trainer, TrainingArguments
-from distilbert_config import tweets_config as config 
+from distilbert_config import *
+from distilbert_utils import read_data_from_config
+import argparse
+import warnings 
 
-mlflow.set_experiment(config['experiment_name'])
+warnings.filterwarnings("ignore", category=DeprecationWarning)
+warnings.filterwarnings("ignore", category=FutureWarning)
+
+parser = argparse.ArgumentParser()
+parser.add_argument(dest='experiment_name', type=str, help="mlflow experiment name")
+parser.add_argument(dest='config', type=str, help="'tweets_config' or 'bbc_config'")
+args = parser.parse_args()
+
+print(args)
+print('parsing arguments..')
+if args.config == 'tweets_config':
+  config = tweets_config
+elif args.config == 'bbc_config':
+  config = bbc_config
+
+print(f"setting up experiment: {args.experiment_name}")
+mlflow.set_experiment(args.experiment_name)
 
 lfs = config['lfs']
 
@@ -41,64 +59,53 @@ label_model_acc = label_model.score(L=L_dev, Y=y_dev, tie_break_policy="random")
 print(f'label model acc: {label_model_acc}')
 
 print('fitting Majority Label Voter model')
-majority_model = MajorityLabelVoter(cardinality=5)
-# preds_train = majority_model.predict(L=L_train)
+majority_model = MajorityLabelVoter(cardinality=config['num_labels'])
 majority_acc = majority_model.score(L=L_dev, Y=np.array(y_dev).reshape(-1,1), tie_break_policy="random")["accuracy"]
 print(f'majority_label_acc: {majority_acc}')
-
 
 log_metric('majority_label_acc', majority_acc)
 log_metric('label_model_acc', label_model_acc)
 
-probs_train = label_model.predict_proba(L=L_train)
-df_train_filtered, probs_train_filtered = filter_unlabeled_dataframe(
-    X=X_train, y=probs_train, L=L_train
-)
-preds_train_filtered = probs_to_preds(probs=probs_train_filtered)
+# probs_train = label_model.predict_proba(L=L_train)
+# df_train_filtered, probs_train_filtered = filter_unlabeled_dataframe(
+#     X=X_train, y=probs_train, L=L_train
+# )
+# preds_train_filtered = probs_to_preds(probs=probs_train_filtered)
 
-print('setting up model that will take in noise-aware labels from Label Model')
-print('tokenizing and encoding texts')
-tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-train_encodings = tokenizer(X_train['text'].values.tolist(), truncation=True, padding=True)
-train_encodings = tokenizer(df_train_filtered['text'].values.tolist(), truncation=True, padding=True)
-dev_encodings = tokenizer(X_dev['text'].values.tolist(), truncation=True, padding=True)
+# print('setting up model that will take in noise-aware labels from Label Model')
+# print('tokenizing and encoding texts')
+# tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+# train_encodings = tokenizer(X_train['text'].values.tolist(), truncation=True, padding=True)
+# train_encodings = tokenizer(df_train_filtered['text'].values.tolist(), truncation=True, padding=True)
+# dev_encodings = tokenizer(X_dev['text'].values.tolist(), truncation=True, padding=True)
 
-train_weak_sup_dataset = TweetsDataset(train_encodings, preds_train_filtered)
-dev_weak_sup_dataset = TweetsDataset(dev_encodings, y_dev.values.tolist())
+# train_weak_sup_dataset = TweetsDataset(train_encodings, preds_train_filtered)
+# dev_weak_sup_dataset = TweetsDataset(dev_encodings, y_dev.values.tolist())
 
-training_args = TrainingArguments(
-    output_dir='./results',          # output directory
-    num_train_epochs=3,              # total number of training epochs
-    per_device_train_batch_size=16,  # batch size per device during training
-    per_device_eval_batch_size=64,   # batch size for evaluation
-    warmup_steps=500,                # number of warmup steps for learning rate scheduler
-    weight_decay=0.01,               # strength of weight decay
-    logging_dir='./logs',            # directory for storing logs
-    logging_steps=10,
-)
+# training_args = TrainingArguments(
+#     output_dir='./results',          # output directory
+#     num_train_epochs=3,              # total number of training epochs
+#     per_device_train_batch_size=16,  # batch size per device during training
+#     per_device_eval_batch_size=64,   # batch size for evaluation
+#     warmup_steps=500,                # number of warmup steps for learning rate scheduler
+#     weight_decay=0.01,               # strength of weight decay
+#     logging_dir='./logs',            # directory for storing logs
+#     logging_steps=10,
+# )
 
-model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=config['num_labels'])
-print('start training!')
-trainer = Trainer(
-    model=model,                         # the instantiated 🤗 Transformers model to be trained
-    args=training_args,                  # training arguments, defined above
-    train_dataset=train_weak_sup_dataset,# training dataset
-    eval_dataset=dev_weak_sup_dataset,   # evaluation dataset
-    compute_metrics = compute_metrics        
-)
+# model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=config['num_labels'])
+# print('start training!')
+# trainer = Trainer(
+#     model=model,                         # the instantiated 🤗 Transformers model to be trained
+#     args=training_args,                  # training arguments, defined above
+#     train_dataset=train_weak_sup_dataset,# training dataset
+#     eval_dataset=dev_weak_sup_dataset,   # evaluation dataset
+#     compute_metrics = compute_metrics        
+# )
 
-trainer.train()
+# trainer.train()
 
-save_model_folder = "results/" + datetime.now().strftime('%Y%m%d%M') + "/"
-os.makedirs(save_model_folder)
-trainer.save_model(save_model_folder)
+# results_dict = trainer.evaluate()
+# log_and_print_metrics(results_dict)
 
-results_dict = trainer.evaluate()
-log_and_print_metrics(results_dict)
-
-
-metrics = pd.DataFrame({'precision':results_dict['eval_precision'], 'recall':results_dict['eval_recall'], 'fscore':results_dict['eval_f1']}, index=[0])
-metrics_csv_name = datetime.now().strftime('%Y%m%d%M') + 'metrics.csv'
-metrics.to_csv('outputs/' + metrics_csv_name)
-print(f'overall metrics saved to outputs/{metrics_csv_name}')
 
