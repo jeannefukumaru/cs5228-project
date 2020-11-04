@@ -66,46 +66,60 @@ print(f'majority_label_acc: {majority_acc}')
 log_metric('majority_label_acc', majority_acc)
 log_metric('label_model_acc', label_model_acc)
 
-# probs_train = label_model.predict_proba(L=L_train)
-# df_train_filtered, probs_train_filtered = filter_unlabeled_dataframe(
-#     X=X_train, y=probs_train, L=L_train
-# )
-# preds_train_filtered = probs_to_preds(probs=probs_train_filtered)
+probs_train = label_model.predict_proba(L=L_train)
+df_train_filtered, probs_train_filtered = filter_unlabeled_dataframe(
+    X=X_train, y=probs_train, L=L_train
+)
+preds_train_filtered = probs_to_preds(probs=probs_train_filtered)
 
-# print('setting up model that will take in noise-aware labels from Label Model')
-# print('tokenizing and encoding texts')
-# tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
-# train_encodings = tokenizer(X_train['text'].values.tolist(), truncation=True, padding=True)
-# train_encodings = tokenizer(df_train_filtered['text'].values.tolist(), truncation=True, padding=True)
-# dev_encodings = tokenizer(X_dev['text'].values.tolist(), truncation=True, padding=True)
+print('setting up model that will take in noise-aware labels from Label Model')
+print('tokenizing and encoding texts')
+tokenizer = DistilBertTokenizerFast.from_pretrained('distilbert-base-uncased')
+full_sup_train_encodings = tokenizer(X_train['text'].values.tolist(), truncation=True, padding=True)
+weak_suptrain_encodings = tokenizer(df_train_filtered['text'].values.tolist(), truncation=True, padding=True)
+dev_encodings = tokenizer(X_dev['text'].values.tolist(), truncation=True, padding=True)
 
-# train_weak_sup_dataset = TweetsDataset(train_encodings, preds_train_filtered)
-# dev_weak_sup_dataset = TweetsDataset(dev_encodings, y_dev.values.tolist())
+train_weak_sup_dataset = Dataset(weak_sup_train_encodings, preds_train_filtered)
+train_full_sup_dataset = Dataset(full_sup_train_encodings, y_train.value.tolist())
+dev_weak_sup_dataset = Dataset(dev_encodings, y_dev.values.tolist())
 
-# training_args = TrainingArguments(
-#     output_dir='./results',          # output directory
-#     num_train_epochs=3,              # total number of training epochs
-#     per_device_train_batch_size=16,  # batch size per device during training
-#     per_device_eval_batch_size=64,   # batch size for evaluation
-#     warmup_steps=500,                # number of warmup steps for learning rate scheduler
-#     weight_decay=0.01,               # strength of weight decay
-#     logging_dir='./logs',            # directory for storing logs
-#     logging_steps=10,
-# )
+training_args = TrainingArguments(
+    output_dir='./results',          # output directory
+    num_train_epochs=3,              # total number of training epochs
+    per_device_train_batch_size=16,  # batch size per device during training
+    per_device_eval_batch_size=64,   # batch size for evaluation
+    warmup_steps=500,                # number of warmup steps for learning rate scheduler
+    weight_decay=0.01,               # strength of weight decay
+    logging_dir='./logs',            # directory for storing logs
+    logging_steps=10,
+)
 
-# model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=config['num_labels'])
-# print('start training!')
-# trainer = Trainer(
-#     model=model,                         # the instantiated 🤗 Transformers model to be trained
-#     args=training_args,                  # training arguments, defined above
-#     train_dataset=train_weak_sup_dataset,# training dataset
-#     eval_dataset=dev_weak_sup_dataset,   # evaluation dataset
-#     compute_metrics = compute_metrics        
-# )
+model = DistilBertForSequenceClassification.from_pretrained("distilbert-base-uncased", num_labels=config['num_labels'])
+print('start training!')
+weak_sup_trainer = Trainer(
+    model=model,                         # the instantiated 🤗 Transformers model to be trained
+    args=training_args,                  # training arguments, defined above
+    train_dataset=train_weak_sup_dataset,# training dataset
+    eval_dataset=dev_weak_sup_dataset,   # evaluation dataset
+    compute_metrics = compute_metrics        
+)
 
-# trainer.train()
+weak_sup_trainer.train()
+weak_sup_results_dict = weak_sup_trainer.evaluate()
 
-# results_dict = trainer.evaluate()
-# log_and_print_metrics(results_dict)
+results_dict = trainer.evaluate()
 
+full_sup_trainer = Trainer(
+    model=model,                         # the instantiated 🤗 Transformers model to be trained
+    args=training_args,                  # training arguments, defined above
+    train_dataset=train_full_sup_dataset,# training dataset
+    eval_dataset=dev_dataset,   # evaluation dataset
+    compute_metrics = compute_metrics        
+)
 
+full_sup_trainer.train()
+
+full_sup_results_dict = full_sup_trainer.evaluate()
+
+log_and_print_metrics('distilbert_weak_sup', weak_sup_results_dict)
+log_and_print_metrics('distilbert_full_sup', full_sup_results_dict)
