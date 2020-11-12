@@ -74,12 +74,6 @@ def lf_contains_politics_terms(x):
             'attorney general', 'chancellor gordon', 'tories say', 'mock elections']
     return POLITICS if any(t in x.text.lower() for t in words) else ABSTAIN
 
-# labeling functions for topic modelling results 
-
-# not to mention concordance or other sentence structures 
-
-# and other clustering options 
-
 @labeling_function()
 def lf_kmeans_label_0(x):
     vecs = vectorizer.transform(x)

@@ -83,12 +83,7 @@ def vader_lexicon_neu(x):
     if polarity['compound'] == 0:
         return NEU
     else: return ABSTAIN
-
-# @preprocessor(memoize=True)
-# def textblob_sentiment(x):
-#     scores = TextBlob(str(x))
-#     return scores
-
+    
 @labeling_function()
 def textblob_pos(x):
     scores = TextBlob(x.text)
