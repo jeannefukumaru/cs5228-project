@@ -35,7 +35,7 @@ def lf_contains_cancelled(x):
 - example: `python label_model.py tweets_opinion_lexicon tweets_config`
 
 # Discriminative models 
-## Run baseline on Weak / Gold Label Dataset
+## Run Baseline on Weak / Gold Label Dataset
 - `python baseline.py <experiment-name> <config-name>`
 - example: `python baseline.py tweets_baseline tweets_config`
 
