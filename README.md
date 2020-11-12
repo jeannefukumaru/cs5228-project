@@ -28,13 +28,14 @@ def lf_contains_cancelled(x):
 - `baseline_config.py` contains training and testing configuration for baseline model 
 - `lgreg_config.py` contains training and testing configuration for Logistic Regression model 
 - `distilbert_config.py` contains training and testing configuration for Distilbert model
+* datasets are stored under `data/processed` folder and `data/augmented` folder.
 
 # Run label model to denoise and reweight labelling functions 
 - `python label_model.py <experiment-name> <config-name>`. 
 - example: `python label_model.py tweets_opinion_lexicon tweets_config`
 
 # Discriminative models 
-## run baseline 
+## Run baseline on Weak / Gold Label Dataset
 - `python baseline.py <experiment-name> <config-name>`
 - example: `python baseline.py tweets_baseline tweets_config`
 
@@ -49,6 +50,7 @@ def lf_contains_cancelled(x):
 ## View experiment results using MLFlow 
 `mlflow ui` 
 
+Generated datasets are already stored within the `data` folder. However, to re-create the datasets from scratch, follow the instructions below. 
 # Create processed datasets 
 ```
 python data/create_bbc_dataset.py  # process BBC News dataste and perform train/dev/test splits
