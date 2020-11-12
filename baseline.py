@@ -32,7 +32,7 @@ def zero_rule_algorithm_classification(zero_rule, y_dev):
     predicted = [prediction for i in range(len(y_dev))]
     return predicted
 
-predicted = zero_rule_algorithm_classification(0, y_dev)
+predicted = zero_rule_algorithm_classification(1, y_dev)
 
 precision, recall, fscore, support = precision_recall_fscore_support(y_dev, predicted, average='macro')
 accuracy_score = accuracy_score(list(y_dev.values.reshape(-1)), predicted)
