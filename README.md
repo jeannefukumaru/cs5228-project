@@ -2,7 +2,7 @@
 
 # Introduction
 
-Supervised learning has given us state-of-the-art results on many machine learning tasks, from sentiment analysis, text categorization, image classification to question and answering. However, supervised learning needs data to be labelled by human annotators, a task that is time consuming and laborious. To alleviate this bottleneck, researchers have developed techniques to programmatically build training datasets, techniques that bypass the need for annotators and save timev. Collectively, these techniques are grouped under the term 'Data Programming'. 
+Supervised learning has given us state-of-the-art results on many machine learning tasks, from sentiment analysis, text categorization, image classification to question and answering. However, supervised learning needs data to be labelled by human annotators, a task that is time consuming and laborious. To alleviate this bottleneck, researchers have developed techniques to programmatically build training datasets, techniques that bypass the need for annotators and save time. Collectively, these techniques are grouped under the term 'Data Programming'. 
 
 In this project, we investigate to what extent data programming techniques are able to replace hand-crafted, "gold" labels for supervised learning. We take two datasets, the Twitter US Airline Sentiment dataset, and the BBC News dataset, which from several linguistic aspects are different from each other. We then separately apply two data programming techniques on each dataset - labelling functions and transformation functions - to obtain a weakly labeled datasets. The resulting weakly labeled datasets are then used to train a Logistic Regression model and a Distilbert Transformer model. 
 
